@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRC Calculator</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <style>
+        body {
+            margin: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+
+        #result {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>CRC Calculator</h1>
+
+        <div class="field">
+            <label>Bit Length</label>
+            <div class="control">
+                <div class="field has-addons">
+                    <div class="control mx-1">
+                        <label class="radio">
+                            <input type="radio" name="bitLength" value="8" checked>
+                            CRC-8
+                        </label>
+                    </div>
+                    <div class="control mx-1">
+                        <label class="radio">
+                            <input type="radio" name="bitLength" value="16">
+                            CRC-16
+                        </label>
+                    </div>
+                    <div class="control mx-1">
+                        <label class="radio">
+                            <input type="radio" name="bitLength" value="32">
+                            CRC-32
+                        </label>
+                    </div>
+                    <div class="control mx-1">
+                        <label class="radio">
+                            <input type="radio" name="bitLength" value="64">
+                            CRC-64
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field">
+            <label>CRC Parametrization</label>
+            <div class="control">
+                <label class="radio">
+                    <input type="radio" name="parametrization" value="predefined" checked>
+                    Predefined
+                </label>
+                <label class="radio">
+                    <input type="radio" name="parametrization" value="custom">
+                    Custom
+                </label>
+            </div>
+        </div>
+
+        <div id="predefinedOptions" class="field">
+            <label>Select Algorithm</label>
+            <div class="control">
+                <div class="select">
+                    <select id="algorithm"></select>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="field">
+                <label>Polynomial</label>
+                <div class="control">
+                    <input id="customPoly" name="parameters" disabled type="text" class="input"
+                        placeholder="Enter Polynomial">
+                </div>
+            </div>
+            <div class="field">
+                <label>Initial Value</label>
+                <div class="control">
+                    <input id="customInitial" name="parameters" disabled type="text" class="input"
+                        placeholder="Enter Initial Value">
+                </div>
+            </div>
+            <div class="field">
+                <label>Final XOR Value</label>
+                <div class="control">
+                    <input id="customXor" name="parameters" disabled type="text" class="input"
+                        placeholder="Enter Final XOR Value">
+                </div>
+            </div>
+        </div>
+
+        <div class="field mt-2">
+            <label>CRC Input Data</label>
+            <div class="control">
+                <label class="radio">
+                    <input type="radio" name="inputType" value="string" checked>
+                    String
+                </label>
+                <label class="radio">
+                    <input type="radio" name="inputType" value="bytes">
+                    Bytes
+                </label>
+                <label class="radio">
+                    <input type="radio" name="inputType" value="binary">
+                    Binary String
+                </label>
+                <input id="inputData" class="input mt-2" value="Hello World" type="text" placeholder="Enter CRC Input Data">
+            </div>
+        </div>
+
+        <div class="field">
+            <div class="control">
+                <button id="calculateBtn" class="button is-success">Calculate CRC</button>
+            </div>
+        </div>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const predefinedOptions = document.getElementById('predefinedOptions');
+            const algorithmSelect = document.getElementById('algorithm');
+            const customPolyInput = document.getElementById('customPoly');
+            const customInitialInput = document.getElementById('customInitial');
+            const customXorInput = document.getElementById('customXor');
+            const inputTypeSelect = document.getElementsByName('inputType');
+            const inputDataInput = document.getElementById('inputData');
+            const calculateBtn = document.getElementById('calculateBtn');
+            const resultDiv = document.getElementById('result');
+            const parameters = document.getElementsByName('parameters');
+
+
+            // Define predefined algorithms
+            const algorithms = [
+                {
+                    8: {
+                        CRC8: 0x07,
+                        CRC8_SAE_J1850: 0x1D,
+                        CRC8_SAE_J1850_ZERO: 0x1C,
+                        CRC8_8H2F: 0x2F,
+                        CRC8_CDMA2000: 0x9B,
+                        CRC8_DARC: 0x39,
+                        CRC8_DVB_S2: 0xD5,
+                        CRC8_EBU: 0x1D,
+                        CRC8_ICODE: 0x1D,
+                        CRC8_ITU: 0x07,
+                        CRC8_MAXIM: 0x31,
+                        CRC8_ROHC: 0x07,
+                        CRC8_WCDMA: 0x9
+                    }
+                    ,
+                    16: {
+                        CRC16_CCIT_ZERO: 0x1021,
+                        CRC16_ARC: 0x8005,
+                        CRC16_AUG_CCITT: 0x1021,
+                        CRC16_BUYPASS: 0x8005,
+                        CRC16_CCITT_FALSE: 0x1021,
+                        CRC16_CDMA2000: 0xC867,
+                        CRC16_DDS_110: 0x8005,
+                        CRC16_DECT_R: 0x0589,
+                        CRC16_DECT_X: 0x0589,
+                        CRC16_DNP: 0x3D65,
+                        CRC16_EN_13757: 0x3D65,
+                        CRC16_GENIBUS: 0x1021,
+                        CRC16_MAXIM: 0x8005,
+                        CRC16_MCRF4XX: 0x1021,
+                        CRC16_RIELLO: 0x1021,
+                        CRC16_T10_DIF: 0x8BB7,
+                        CRC16_TELEDISK: 0xA097,
+                        CRC16_TMS37157: 0x1021,
+                        CRC16_USB: 0x8005,
+                        CRC16_A: 0xC6C1,
+                        CRC16_KERMIT: 0x1021,
+                        CRC16_MODBUS: 0x8005,
+                        CRC16_X_25: 0x8408,
+                        CRC16_XMODEM: 0x1021
+                    }
+                    ,
+                    32: {
+                        CRC32: 0xEDB88320,
+                        CRC32_BZIP2: 0x04C11DB7,
+                        CRC32_C: 0x1EDC6F41,
+                        CRC32_D: 0xA833982B,
+                        CRC32_MPEG2: 0x04C11DB7,
+                        CRC32_POSIX: 0x04C11DB7,
+                        CRC32_Q: 0x814141AB,
+                        CRC32_JAMCRC: 0x04C11DB7,
+                        CRC32_XFER: 0x000000AF
+                    }
+                    ,
+                    64: {
+                        CRC64_ECMA_182: BigInt("0xC96C5795D7870F42"),
+                        CRC64_GO_ISO: BigInt("0xD800000000000000"),
+                        CRC64_WE: BigInt("0x42F0E1EBA9EA3693"),
+                        CRC64_XZ: BigInt("0x42F0E1EBA9EA3693")
+                    }
+                }
+            ];
+
+            // Populate predefined algorithm options based on bit length
+            document.getElementsByName('bitLength').forEach(function (radio) {
+                radio.addEventListener('change', function () {
+                    const bitLength = getSelectedBitLength();
+                    populateAlgorithms(bitLength);
+                });
+            });
+
+            function getSelectedBitLength() {
+                const selectedBitLengthRadio = document.querySelector('input[name="bitLength"]:checked');
+                return selectedBitLengthRadio ? selectedBitLengthRadio.value : null;
+            }
+
+
+
+            // Populate predefined algorithm options initially
+            populateAlgorithms(8);
+
+            function populateAlgorithms(bitLength) {
+                const algorithmSelect = document.getElementById('algorithm');
+                algorithmSelect.innerHTML = '';
+
+                if (algorithms.find(entry => entry[bitLength])) {
+                    const selectedAlgorithms = algorithms.find(entry => entry[bitLength]);
+                    Object.keys(selectedAlgorithms[bitLength]).forEach(function (algorithm, index) {
+                        const option = document.createElement('option');
+                        option.value = algorithm;
+                        option.text = algorithm;
+
+                        algorithmSelect.add(option);
+
+                        // Check if this is the first option and trigger click
+                        if (index === 0) {
+                            option.selected = true;  // Set the first option as selected
+                            option.click();  // Trigger click event
+                        }
+                    });
+                }
+            }
+
+
+            // Toggle between predefined and custom options
+            document.getElementsByName('parametrization').forEach(function (radio) {
+                radio.addEventListener('change', function () {
+                    if (this.value === 'predefined') {
+                        parameters.forEach(parameter => {
+                            parameter.disabled = true;
+                            algorithmSelect.disabled = false;
+                        })
+                    } else {
+                        parameters.forEach(parameter => {
+                            algorithmSelect.disabled = true;
+                            parameter.disabled = false;
+                        });
+                    }
+                });
+            });
+
+            // Funciton to calculate Initial and Final XOR value
+            // Show value in the input
+            algorithmSelect.addEventListener('input', function () {
+                const selectedAlgorithm = this.value;
+                bitLength = getSelectedBitLength();
+                getPolynomicalValue(bitLength, selectedAlgorithm);
+            });
+
+            function getPolynomicalValue(bitLength, selectedAlgorithm) {
+                // Find the entry in the algorithms array that matches the selected algorithm
+                const selectedAlgorithmData = algorithms.find(data => data[parseInt(bitLength)][selectedAlgorithm]);
+
+                // Check if the entry is found before accessing the property
+                if (selectedAlgorithmData && selectedAlgorithmData[parseInt(bitLength)][selectedAlgorithm]) {
+                    // Get the corresponding polynomial from the algorithms object
+                    const selectedAlgorithmPoly = selectedAlgorithmData[parseInt(bitLength)][selectedAlgorithm];
+
+                    // Set the value of customPolyInput
+                    customPolyInput.value = decimalToHex(selectedAlgorithmPoly);
+                    customInitialInput.value = decimalToHex(calculateInitialValue(selectedAlgorithm));
+                    customXorInput.value = decimalToHex(calculateFinalXorValue(selectedAlgorithm));
+
+                } else {
+                    // Handle the case where the selected algorithm is not found
+                    console.error('Selected algorithm not found in the algorithms array.');
+                }
+            }
+
+            //Calculate Initaial and Final XOR value
+            function calculateInitialValue(polynomial) {
+                // Convert the hexadecimal polynomial to an integer
+                const polyInt = parseInt(polynomial, 16);
+
+                // The initial value is the bitwise NOT of the polynomial
+                const initialValue = ~polyInt >>> 0; // Ensure it's an unsigned 32-bit integer
+
+                return initialValue;
+            }
+
+            function calculateFinalXorValue(polynomial) {
+                // Convert the hexadecimal polynomial to an integer
+                const polyInt = parseInt(polynomial, 16);
+
+                // For a CRC polynomial, the final XOR value is usually 0xFFFFFFFF
+                const finalXorValue = 0xFFFFFFFF;
+
+                // XOR the polynomial with the final XOR value
+                const result = polyInt ^ finalXorValue;
+
+                return result >>> 0; // Ensure it's an unsigned 32-bit integer
+            }
+
+            getPolynomicalValue(8, 'CRC8');
+            // Decimal to HEX
+            function decimalToHex(decimalNumber) {
+                // Ensure the input is a non-negative integer
+                decimalNumber = Math.floor(decimalNumber);
+                if (decimalNumber < 0 || isNaN(decimalNumber)) {
+                    throw new Error("Input must be a non-negative integer.");
+                }
+
+                // Convert to hexadecimal and return as a string
+                const hexString = decimalNumber.toString(16).toUpperCase();
+                return "0x" + hexString;
+            }
+
+
+
+            // Calculate CRC
+            function calculateCRC(bitLength, selectedAlgorithm, inputData) {
+                let poly, crc;
+                switch (parseInt(bitLength)) {
+                    case 8:
+                        poly = algorithms[0][bitLength][selectedAlgorithm];
+                        crc = 0;
+                        for (let i = 0; i < inputData.length; i++) {
+                            crc ^= inputData.charCodeAt(i);
+                            for (let j = 0; j < 8; j++) {
+                                if (crc & 0x80) {
+                                    crc = (crc << 1) ^ poly;
+                                } else {
+                                    crc <<= 1;
+                                }
+                            }
+                        }
+                        return crc & 0xFF;
+
+                    case 16:
+                        poly = algorithms[0][bitLength][selectedAlgorithm];
+                        crc = 0xFFFF;
+                        for (let i = 0; i < inputData.length; i++) {
+                            crc ^= inputData.charCodeAt(i) << 8;
+                            for (let j = 0; j < 8; j++) {
+                                if (crc & 0x8000) {
+                                    crc = (crc << 1) ^ poly;
+                                } else {
+                                    crc <<= 1;
+                                }
+                            }
+                        }
+                        return crc & 0xFFFF;
+
+                    case 32:
+                        poly = algorithms[0][bitLength][selectedAlgorithm];
+                        crc = 0xFFFFFFFF;
+                        for (let i = 0; i < inputData.length; i++) {
+                            crc ^= inputData.charCodeAt(i);
+                            for (let j = 0; j < 8; j++) {
+                                if (crc & 1) {
+                                    crc = (crc >>> 1) ^ poly;
+                                } else {
+                                    crc >>>= 1;
+                                }
+                            }
+                        }
+                        return crc ^ 0xFFFFFFFF;
+
+                    case 64:
+                        poly = algorithms[0][bitLength][selectedAlgorithm];
+                        crc = BigInt("0xFFFFFFFFFFFFFFFF");
+                        for (let i = 0; i < inputData.length; i++) {
+                            crc ^= BigInt(inputData.charCodeAt(i));
+                            for (let j = 0; j < 8; j++) {
+                                if (crc & BigInt(1)) {
+                                    crc = (crc >> BigInt(1)) ^ poly;
+                                } else {
+                                    crc >>= BigInt(1);
+                                }
+                            }
+                        }
+                        return Number(crc ^ BigInt("0xFFFFFFFFFFFFFFFF"));
+
+                    default:
+                        return null;
+                }
+            }
+
+            // Calculate CRC when the button is clicked
+            calculateBtn.addEventListener('click', function () {
+                if (inputDataInput.value) {
+                    const bitLength = document.querySelector('input[name="bitLength"]:checked').value;
+                    const algorithm = algorithmSelect.value;
+                    const customPoly = customPolyInput.value;
+                    const customInitial = customInitialInput.value;
+                    const customXor = customXorInput.value;
+                    const inputType = document.querySelector('input[name="inputType"]:checked').value;
+                    const inputData = decimalToHex(calculateCRC(getSelectedBitLength(), algorithm, inputDataInput.value));
+                    resultDiv.innerHTML = `<p class="is-size-3 has-text-success has-text-weight-bold">CRC Result: ${inputData}</p>`;
+                }
+                else {
+                    alert("Enter a value to Calculate CRC !")
+                }
+            });
+        }); 
+    </script>
+
+</body>
+
+</html>
